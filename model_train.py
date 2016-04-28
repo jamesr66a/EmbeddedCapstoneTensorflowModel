@@ -22,17 +22,23 @@ with open('apr25_1.csv') as f:
                                        
     feat_list = list(features)
 
-    X = []
-    Y = []
-    for line in lines:
-      toks = line.split(',')
-      x_vec = [-100]*len(features)
-      for key, value in zip(toks[3::2], toks[4::2]):
-        if key != '\n':
-          x_vec[feat_list.index(key)] = int(value)
-      X += [x_vec]
-      y_vec = [float(i) for i in toks[0:2]]
-      Y += [y_vec]
+    X = []                                                                    
+    Y = []                                                                    
+    for line in lines:                                                        
+      toks = line.split(',')                                                  
+      x_vec = [-100]*len(features)                                            
+      for key, value in zip(toks[3::2], toks[4::2]):                          
+        if key != '\n':                                                       
+          x_vec[feat_list.index(key)] = int(value)                            
+      X += [x_vec]                                                            
+      if float(toks[0]) > 500:                                                
+        x = -float(toks[0])                                                   
+      else:                                                                   
+        x = float(toks[0])                                                    
+      y = float(toks[1])                                                      
+      y_vec = [x, y]                                                          
+                                                                              
+      Y += [y_vec] 
 
 X_np = np.array(X, dtype=np.int32)
 Y_np = np.array(Y, dtype=np.double)
@@ -44,7 +50,7 @@ if os.path.exists(sys.argv[1]):
   regressor = skflow.TensorFlowDNNRegressor.restore(sys.argv[1])
 else:
   regressor = skflow.TensorFlowDNNRegressor(
-      hidden_units=[37, 37, 37],
+      hidden_units=[37, 37],
       batch_size=1000,
       steps=1000,
       learning_rate=0.0005,
