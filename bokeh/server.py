@@ -29,22 +29,13 @@ from flask_restful import Resource, Api
 app = Flask(__name__)
 api = Api(app)
 
-from bokeh.plotting import Figure
 from bokeh.client import push_session
-from bokeh.models import ColumnDataSource, HBox
-from bokeh.plotting import figure, curdoc, show
+from bokeh.plotting import figure, curdoc, vplot
 
-p = Figure(plot_height=600, plot_width=800, title="")
-source = ColumnDataSource(data=dict(x=[], y=[]))
-p.circle(x="x", y="y", source=source)
+p = figure(x_range=(-1000, 1000), y_range=(-1000, 1000), toolbar_location=None)
 
-plot_xs = []
-plot_ys = []
-
-def update():
-  source.data = dict(x=plot_xs, y=plot_ys)
-
-session = push_session(curdoc())
+r = p.scatter(x=[], y=[], radius=10, fill_color='#000000', fill_alpha=0.5)
+ds = r.data_source
 
 class TFModelServer(Resource):
   def put(self):
@@ -61,25 +52,22 @@ class TFModelServer(Resource):
 
     prediction = regressor.predict(np.array([feat_vec]))
     print prediction
-    plot_xs.append(prediction[0, 0])
-    plot_ys.append(prediction[0, 0])
-    update(None, None, None)
+    ds.data['x'].append(prediction[0, 0])
+    ds.data['y'].append(prediction[0, 1])
+    ds.trigger('data', ds.data, ds.data)
 
-curdoc().add_root(HBox(None, p, width=1100))
-curdoc().add_periodic_callback(update, 50)
-
-api.add_resource(TFModelServer, '/vector')
+curdoc().add_root(vplot(p))
 
 import thread
 
+session = push_session(curdoc())
+
 def bokeh_thread():
-  session.show()
   session.loop_until_closed()
- 
-try:
-  thread.start_new_thread(bokeh_thread, ())
-except:
-  print "Unable to start bokeh thread"
-  
+
+thread.start_new_thread(bokeh_thread, ())
+session.show()
+
+api.add_resource(TFModelServer, '/vector') 
 app.run(debug=True, host='192.168.2.101')
 
