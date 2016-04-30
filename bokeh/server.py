@@ -32,10 +32,29 @@ api = Api(app)
 from bokeh.client import push_session
 from bokeh.plotting import figure, curdoc, vplot
 
-p = figure(x_range=(-1000, 1000), y_range=(-1000, 1000), toolbar_location=None)
+p = figure(x_range=(-1600, 200), y_range=(-400, 1200), toolbar_location="below", tools="pan,wheel_zoom,box_zoom,reset,resize")
 
-r = p.scatter(x=[], y=[], radius=10, fill_color='#000000', fill_alpha=0.5)
+r = p.scatter(x=[], y=[], radius=10, fill_color='#0000ff', fill_alpha=0.5)
+r2 = p.scatter(x=[], y=[], radius=10, fill_color='#ff0000', fill_alpha=0.5)
 ds = r.data_source
+ds2 = r2.data_source
+
+p.line(x=[0, 0], y=[-9*30, 39*30])
+p.line(x=[0, -6*30], y=[-9*30, -9*30])
+p.line(x=[0, -6*30], y=[39*30, 39*30])
+p.line(x=[-6*30, -6*30], y=[-9*30, 23*30])
+p.line(x=[-6*30, -6*30], y=[26*30, 39*30])
+p.line(x=[-6*30, -8*30], y=[26*30, 26*30])
+p.line(x=[-6*30, -39*30], y=[23*30, 23*30])
+p.line(x=[-8*30, -8*30], y=[26*30, 30*30])
+p.line(x=[-8*30, -36*30], y=[30*30, 30*30])
+p.line(x=[-39*30, -39*30], y=[0*30, 23*30])
+p.line(x=[-36*30, -36*30], y=[26*30, 30*30])
+p.line(x=[-36*30, -39*30], y=[26*30, 26*30])
+p.line(x=[-39*30, -39*30], y=[26*30, 33*30])
+p.line(x=[-39*30, -45*30], y=[33*30, 33*30])
+p.line(x=[-39*30, -45*30], y=[0, 0])
+p.line(x=[-45*30, -45*30], y=[0, 33*30])
 
 class TFModelServer(Resource):
   def put(self):
@@ -51,16 +70,21 @@ class TFModelServer(Resource):
       feat_vec[i] = features.get(feat_name, -100)
 
     prediction = regressor.predict(np.array([feat_vec]))
+    print dict(zip(features, feat_vec))
     print prediction
     ds.data['x'].append(prediction[0, 0])
     ds.data['y'].append(prediction[0, 1])
     ds.trigger('data', ds.data, ds.data)
 
+    ds2.data['x'].append(x)
+    ds2.data['y'].append(y)
+    ds2.trigger('data', ds2.data, ds2.data)
+
 curdoc().add_root(vplot(p))
 
 import thread
 
-session = push_session(curdoc())
+session = push_session(curdoc(), app_path='/')
 
 def bokeh_thread():
   session.loop_until_closed()
